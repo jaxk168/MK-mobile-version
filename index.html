@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="kh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MK's Pong Duel MB Version</title>
+    <style>
+        @font-face {
+            font-family: 'Khmer OS Siemreap';
+            src: local('Khmer OS Siemreap'), 
+                 url('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSansKhmer/NotoSansKhmer-Regular.ttf') format('truetype');
+            font-display: swap;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: 'Khmer OS Siemreap', 'Noto Sans Khmer', Arial, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #game-wrapper {
+            position: relative;
+            width: 95%;
+            height: 50vh;
+            max-width: 600px;
+            max-height: 400px;
+            margin: 0 auto;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border: 2px solid purple;
+            overflow: hidden;
+        }
+        
+        #top-border, #bottom-border {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background-color: purple;
+            left: 0;
+        }
+        
+        #top-border {
+            top: 0;
+        }
+        
+        #bottom-border {
+            bottom: 0;
+        }
+        
+        #paddle-left, #paddle-right {
+            position: absolute;
+            width: 12px;
+            height: 80px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        #paddle-left {
+            left: 20px;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        }
+        
+        #paddle-right {
+            right: 20px;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+        
+        #ball {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff8a00, #e52e71);
+            box-shadow: 0 0 10px rgba(229, 46, 113, 0.7);
+        }
+        
+        .score {
+            position: absolute;
+            top: 15px;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        
+        #left-score {
+            left: 25%;
+            color: blue;
+        }
+        
+        #right-score {
+            right: 25%;
+            color: red;
+        }
+        
+        #signature {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(to right, #ff8a00, #e52e71);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        #pause-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 8px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(106, 17, 203, 0.3);
+            z-index: 10;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            text-align: center;
+        }
+        
+        #game-over-message {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+        
+        #restart-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            background: linear-gradient(to right, #4CAF50, #2E8B57);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* Mobile controls */
+        #controls-container {
+            display: flex;
+            justify-content: space-between;
+            width: 95%;
+            max-width: 600px;
+            margin-top: 20px;
+            touch-action: manipulation;
+        }
+        
+        .player-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 45%;
+        }
+        
+        .control-btn {
+            width: 100%;
+            height: 80px;
+            background: rgba(106, 17, 203, 0.7);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        .control-btn:active {
+            background: rgba(37, 117, 252, 0.9);
+            transform: scale(0.98);
+        }
+        
+        /* Landscape mode adjustments */
+        @media (orientation: landscape) {
+            #game-wrapper {
+                height: 60vh;
+                max-height: 400px;
+                width: 90%;
+            }
+            
+            #controls-container {
+                width: 90%;
+                margin-top: 15px;
+            }
+            
+            .player-controls {
+                flex-direction: row;
+                width: 100%;
+                justify-content: center;
+                gap: 5%;
+            }
+            
+            .control-btn {
+                height: 100px;
+                font-size: 40px;
+                min-width: 120px;
+            }
+            
+            #left-controls {
+                justify-content: flex-end;
+                padding-right: 10%;
+            }
+            
+            #right-controls {
+                justify-content: flex-start;
+                padding-left: 10%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-wrapper">
+        <div id="game-container">
+            <button id="pause-btn">សុំទ្រី😑</button>
+            <div id="top-border"></div>
+            <div id="bottom-border"></div>
+            <div id="paddle-left"></div>
+            <div id="paddle-right"></div>
+            <div id="ball"></div>
+            <div id="left-score" class="score">0</div>
+            <div id="right-score" class="score">0</div>
+            <div id="signature">MK</div>
+            
+            <div id="game-over">
+                <div id="game-over-message">💢ហ្គេមបានបញ្ចប់!នរណាបានពិន្ទុច្រើនជាង​អ្នកនោះឈ្នះ💢</div>
+                <button id="restart-btn">លេងម្ដងទៀត😽!</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Controls outside the game container -->
+    <div id="controls-container">
+        <div class="player-controls" id="left-controls">
+            <button class="control-btn" id="left-up">↑</button>
+            <button class="control-btn" id="left-down">↓</button>
+        </div>
+        <div class="player-controls" id="right-controls">
+            <button class="control-btn" id="right-up">↑</button>
+            <button class="control-btn" id="right-down">↓</button>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const gameContainer = document.getElementById('game-container');
+        const paddleLeft = document.getElementById('paddle-left');
+        const paddleRight = document.getElementById('paddle-right');
+        const ball = document.getElementById('ball');
+        const leftScoreDisplay = document.getElementById('left-score');
+        const rightScoreDisplay = document.getElementById('right-score');
+        const pauseBtn = document.getElementById('pause-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // Control buttons
+        const leftUpBtn = document.getElementById('left-up');
+        const leftDownBtn = document.getElementById('left-down');
+        const rightUpBtn = document.getElementById('right-up');
+        const rightDownBtn = document.getElementById('right-down');
+        
+        // Game variables
+        let GAME_WIDTH = gameContainer.clientWidth;
+        let GAME_HEIGHT = gameContainer.clientHeight;
+        const BALL_SIZE = 16;
+        const PADDLE_WIDTH = 12;
+        const PADDLE_HEIGHT = 80;
+        const BORDER_WIDTH = 8;
+        const PADDLE_OFFSET = 20;
+        
+        // Game settings
+        let leftPaddleY = (GAME_HEIGHT - PADDLE_HEIGHT) / 2;
+        let rightPaddleY = (GAME_HEIGHT - PADDLE_HEIGHT) / 2;
+        let ballX = GAME_WIDTH / 2;
+        let ballY = GAME_HEIGHT / 2;
+        const PADDLE_SPEED = 8;
+        const INITIAL_BALL_SPEED = 3;
+        let ballSpeedX = INITIAL_BALL_SPEED;
+        let ballSpeedY = INITIAL_BALL_SPEED;
+        let leftScore = 0;
+        let rightScore = 0;
+        let gameRunning = true;
+        let isPaused = false;
+        let animationId;
+        
+        // Control flags
+        let leftUpActive = false;
+        let leftDownActive = false;
+        let rightUpActive = false;
+        let rightDownActive = false;
+        
+        function init() {
+            updateGameDimensions();
+            setupControls();
+            pauseBtn.addEventListener('click', togglePause);
+            restartBtn.addEventListener('click', restartGame);
+            window.addEventListener('resize', handleResize);
+            resetBall();
+            update();
+        }
+        
+        function handleResize() {
+            GAME_WIDTH = gameContainer.clientWidth;
+            GAME_HEIGHT = gameContainer.clientHeight;
+            updatePositions();
+        }
+        
+        function updateGameDimensions() {
+            GAME_WIDTH = gameContainer.clientWidth;
+            GAME_HEIGHT = gameContainer.clientHeight;
+            
+            // Reset paddle positions
+            leftPaddleY = (GAME_HEIGHT - PADDLE_HEIGHT) / 2;
+            rightPaddleY = (GAME_HEIGHT - PADDLE_HEIGHT) / 2;
+            
+            updatePositions();
+        }
+        
+        function setupControls() {
+            // Touch events for left paddle
+            leftUpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                leftUpActive = true;
+            });
+            leftUpBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                leftUpActive = false;
+            });
+            leftUpBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                leftUpActive = false;
+            });
+            
+            leftDownBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                leftDownActive = true;
+            });
+            leftDownBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                leftDownActive = false;
+            });
+            leftDownBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                leftDownActive = false;
+            });
+            
+            // Touch events for right paddle
+            rightUpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                rightUpActive = true;
+            });
+            rightUpBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                rightUpActive = false;
+            });
+            rightUpBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                rightUpActive = false;
+            });
+            
+            rightDownBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                rightDownActive = true;
+            });
+            rightDownBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                rightDownActive = false;
+            });
+            rightDownBtn.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                rightDownActive = false;
+            });
+            
+            // Mouse events for testing
+            leftUpBtn.addEventListener('mousedown', () => leftUpActive = true);
+            leftUpBtn.addEventListener('mouseup', () => leftUpActive = false);
+            leftUpBtn.addEventListener('mouseleave', () => leftUpActive = false);
+            
+            leftDownBtn.addEventListener('mousedown', () => leftDownActive = true);
+            leftDownBtn.addEventListener('mouseup', () => leftDownActive = false);
+            leftDownBtn.addEventListener('mouseleave', () => leftDownActive = false);
+            
+            rightUpBtn.addEventListener('mousedown', () => rightUpActive = true);
+            rightUpBtn.addEventListener('mouseup', () => rightUpActive = false);
+            rightUpBtn.addEventListener('mouseleave', () => rightUpActive = false);
+            
+            rightDownBtn.addEventListener('mousedown', () => rightDownActive = true);
+            rightDownBtn.addEventListener('mouseup', () => rightDownActive = false);
+            rightDownBtn.addEventListener('mouseleave', () => rightDownActive = false);
+        }
+        
+        function updatePositions() {
+            paddleLeft.style.top = `${leftPaddleY}px`;
+            paddleRight.style.top = `${rightPaddleY}px`;
+            ball.style.left = `${ballX}px`;
+            ball.style.top = `${ballY}px`;
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? 'លេងត💢' : 'សុំទ្រី😑';
+            if (!isPaused && gameRunning) {
+                update();
+            }
+        }
+        
+        function resetBall() {
+            ballX = GAME_WIDTH / 2;
+            ballY = GAME_HEIGHT / 2;
+            ballSpeedX = Math.random() > 0.5 ? INITIAL_BALL_SPEED : -INITIAL_BALL_SPEED;
+            ballSpeedY = (Math.random() * 2 - 1) * INITIAL_BALL_SPEED;
+        }
+        
+        function showGameOver() {
+            gameRunning = false;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        function restartGame() {
+            leftScore = 0;
+            rightScore = 0;
+            leftScoreDisplay.textContent = '0';
+            rightScoreDisplay.textContent = '0';
+            gameOverScreen.style.display = 'none';
+            gameRunning = true;
+            isPaused = false;
+            pauseBtn.textContent = 'សុំទ្រី😑';
+            resetBall();
+            update();
+        }
+        
+        function update() {
+            if (!gameRunning || isPaused) return;
+            
+            // Move paddles based on active controls
+            if (leftUpActive && leftPaddleY > BORDER_WIDTH) {
+                leftPaddleY -= PADDLE_SPEED;
+            }
+            if (leftDownActive && leftPaddleY < GAME_HEIGHT - PADDLE_HEIGHT - BORDER_WIDTH) {
+                leftPaddleY += PADDLE_SPEED;
+            }
+            if (rightUpActive && rightPaddleY > BORDER_WIDTH) {
+                rightPaddleY -= PADDLE_SPEED;
+            }
+            if (rightDownActive && rightPaddleY < GAME_HEIGHT - PADDLE_HEIGHT - BORDER_WIDTH) {
+                rightPaddleY += PADDLE_SPEED;
+            }
+            
+            // Move ball
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+            
+            // Ball collision with borders
+            if (ballY <= BORDER_WIDTH || ballY >= GAME_HEIGHT - BALL_SIZE - BORDER_WIDTH) {
+                ballSpeedY = -ballSpeedY;
+            }
+            
+            // Ball collision with paddles
+            if (ballX <= PADDLE_OFFSET + PADDLE_WIDTH && 
+                ballX >= PADDLE_OFFSET &&
+                ballY + BALL_SIZE >= leftPaddleY && 
+                ballY <= leftPaddleY + PADDLE_HEIGHT) {
+                ballSpeedX = Math.abs(ballSpeedX) * 1.03;
+                const hitPosition = (ballY - leftPaddleY) / PADDLE_HEIGHT;
+                ballSpeedY = (hitPosition - 0.5) * 8;
+            }
+            
+            if (ballX + BALL_SIZE >= GAME_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH && 
+                ballX <= GAME_WIDTH - PADDLE_OFFSET &&
+                ballY + BALL_SIZE >= rightPaddleY && 
+                ballY <= rightPaddleY + PADDLE_HEIGHT) {
+                ballSpeedX = -Math.abs(ballSpeedX) * 1.03;
+                const hitPosition = (ballY - rightPaddleY) / PADDLE_HEIGHT;
+                ballSpeedY = (hitPosition - 0.5) * 8;
+            }
+            
+            // Scoring
+            if (ballX < 0) {
+                rightScore++;
+                rightScoreDisplay.textContent = rightScore;
+                if (rightScore >= 5) showGameOver();
+                else resetBall();
+            }
+            
+            if (ballX > GAME_WIDTH) {
+                leftScore++;
+                leftScoreDisplay.textContent = leftScore;
+                if (leftScore >= 5) showGameOver();
+                else resetBall();
+            }
+            
+            updatePositions();
+            animationId = requestAnimationFrame(update);
+        }
+        
+        // Start the game
+        init();
+    </script>
+</body>
+</html>
